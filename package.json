@@ -50,10 +50,9 @@
   "scripts": {
     "start-backend": "nodemon -e ts -w ./backend -x npm run start-backend-prod",
     "start-backend-prod": "ts-node --project ./backend/tsconfig.json ./backend/index.ts",
-    "start-job": "npm run build-backend & node ./backend/utils/location.ts",
+    "start-job": "ts-node --project ./backend/tsconfig.json ./backend/utils/location.ts",
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "build-backend": "tsc --allowSyntheticDefaultImports ./backend/utils/location.ts",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
