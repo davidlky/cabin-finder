@@ -1,0 +1,15 @@
+{
+  "development": {
+    "username": "davidliu",
+    "password": null,
+    "database": "hytte",
+    "host": "127.0.0.1",
+    "dialect": "postgres"
+  },
+  "production": {
+    "use_env_variable": "DATABASE_URL",
+    "host": "127.0.0.1",
+    "dialect": "postgres",
+    "operatorsAliases": false
+  }
+}
