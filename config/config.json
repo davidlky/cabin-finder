@@ -12,7 +12,8 @@
     "dialect": "postgres",
     "operatorsAliases": false,
     "dialectOptions": {
-      "ssl": true
+      "ssl": true,
+      "rejectUnauthorized": false
     }
   }
 }
