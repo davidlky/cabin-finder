@@ -197,6 +197,7 @@ export const fetchDataForCabins = async (cabins: Cabin[], email = 'david.lky.123
         // TODO send email
       }
     } catch (e) {
+      console.log(e);
       await sgMail.send({
         to: email, // Change to your recipient
         from: 'no-reply@mapper.world', // Change to your verified sender
