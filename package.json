@@ -55,7 +55,6 @@
     "start-backend-prod": "ts-node --project ./backend/tsconfig.json ./backend/index.ts",
     "start-job": "ts-node --project ./backend/tsconfig.json ./backend/utils/location.ts",
     "start": "react-scripts start",
-    "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
