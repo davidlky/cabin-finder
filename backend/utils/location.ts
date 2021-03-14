@@ -16,12 +16,21 @@ type DateSummary = {
   id: number;
   name: string;
 };
+type Cabin = {
+  name: string;
+  id: string;
+  startDate: dayjs.Dayjs;
+  endDate: dayjs.Dayjs;
+  range?: number;
+  preferredStartDDD?: ('Sun' | 'Mon' | 'Tue' | 'Wed' | 'Thur' | 'Fri' | 'Sat')[];
+  subIds?: string[];
+};
 
 export const getLocationAvailability = async (
   locationId: string,
   startDate: dayjs.Dayjs,
   toDate: dayjs.Dayjs,
-  selectedIds: number[] = []
+  selectedIds: string[] = []
 ) => {
   const response = await axios.get(`https://ws.visbook.com/8/api/${locationId}/webproducts`);
 
@@ -31,7 +40,7 @@ export const getLocationAvailability = async (
   }));
 
   if (selectedIds.length !== 0) {
-    ids = ids.filter(({ id }: { id: number }) => selectedIds.includes(id));
+    ids = ids.filter(({ id }: { id: any }) => selectedIds.includes(`${id}`));
   }
 
   const months: number[] = [];
@@ -76,116 +85,151 @@ export const getLocationAvailability = async (
   return summary;
 };
 
-export const fetchDataForCabins = async (email = 'david.lky.123@gmail.com') => {
-  const cabins = [
-    {
-      name: 'Flokehyttene',
-      id: '6446',
-      startDate: dayjs('2021-05-01'),
-      endDate: dayjs('2021-09-01'),
-      range: 1,
-    },
-    {
-      name: 'Runde',
-      id: '6761',
-      startDate: dayjs('2021-05-01'),
-      endDate: dayjs('2021-09-01'),
-      range: 2,
-    },
-  ];
-
+export const fetchDataForCabins = async (cabins: Cabin[], email = 'david.lky.123@gmail.com') => {
   for (const cabin of cabins) {
-    const availabilities: DateSummary[] = await getLocationAvailability(cabin.id, cabin.startDate, cabin.endDate);
-
-    let html = '';
-    for (const availability of availabilities) {
-      // get diff
-      const currentAvailability = await db.HytteLog.findAll({
-        where: {
-          hytteId: `${availability.id}`,
-        },
-      });
-
-      const availabilityStringSet = new Set<string>(
-        availability.availabilities.map((el) => el.format('YYYY-MM-DD'))
+    const { name, id, startDate, endDate, range = 1, preferredStartDDD = [], subIds = [] } = cabin;
+    try {
+      const availabilities: DateSummary[] = await getLocationAvailability(
+        id,
+        startDate,
+        endDate,
+        subIds
       );
-      const pastAvailabilitySet = new Set<string>();
 
-      currentAvailability
-        .map((el: any) => el.availableDate)
-        .forEach((date: string) => {
-          if (!availabilityStringSet.delete(date)) {
-            pastAvailabilitySet.add(date);
-          }
+      let html = '';
+      for (const availability of availabilities) {
+        // get diff
+        const currentAvailability = await db.HytteLog.findAll({
+          where: {
+            hytteId: `${availability.id}`,
+          },
         });
 
-      if (pastAvailabilitySet.size !== 0 || availabilityStringSet.size !== 0) {
-        html += `<p>${availability.name}</p>`;
+        const availabilityStringSet = new Set<string>(
+          availability.availabilities.map((el) => el.format('YYYY-MM-DD'))
+        );
+        const pastAvailabilitySet = new Set<string>();
 
-        if (pastAvailabilitySet.size !== 0) {
-          const dates = Array.from(pastAvailabilitySet);
-          html += `<p>Booked</p><ul>`;
-          html += dates
-            .map((date) => dayjs(date).format('YYYY-MM-DD ddd'))
-            .map((el) => `<li>${el}</li>`)
-            .join('');
-          html += `</ul>`;
-
-          await db.HytteLog.destroy({
-            where: {
-              hytteId: `${availability.id}`,
-              availableDate: dates,
-            },
+        currentAvailability
+          .map((el: any) => el.availableDate)
+          .forEach((date: string) => {
+            if (!availabilityStringSet.delete(date)) {
+              pastAvailabilitySet.add(date);
+            }
           });
-        }
-        if (availabilityStringSet.size !== 0) {
-          const dates = [...availability.availabilities];
-          dates.sort((a, b) => (a.isAfter(b) ? 1 : -1));
-          const dateRanges = dates.reduce((prev, el) => {
-            if (prev.length === 0) {
-              return prev.concat({ date: el, range: 1 });
-            }
-            const latestRange = prev[prev.length - 1];
-            if (
-              el.format('YYYY-MM-DD') ===
-              latestRange.date.add(latestRange.range, 'day').format('YYYY-MM-DD')
-            ) {
-              prev[prev.length - 1].range += 1;
-              return prev;
-            } else {
-              return prev.concat({ date: el, range: 1 });
-            }
-          }, [] as { date: dayjs.Dayjs; range: number }[]);
-          html += `<p>Bookable</p><ul>`;
-          html += dateRanges
-            .filter((el) => el.range >= cabin.range)
-            .map((range) => `${dayjs(range.date).format('YYYY-MM-DD ddd')} - ${range.range} Day(s)`)
-            .map((el) => `<li>${el}</li>`)
-            .join('');
-          html += `</ul>`;
 
-          await db.HytteLog.bulkCreate(
-            Array.from(availabilityStringSet).map((date) => ({
-              hytteId: `${availability.id}`,
-              availableDate: date,
-            }))
-          );
+        if (pastAvailabilitySet.size !== 0 || availabilityStringSet.size !== 0) {
+          let availabilityHtml = '';
+          if (pastAvailabilitySet.size !== 0) {
+            const dates = Array.from(pastAvailabilitySet);
+            availabilityHtml += `<p>Booked</p><ul>`;
+            availabilityHtml += dates
+              .map((date) => dayjs(date).format('YYYY-MM-DD ddd'))
+              .map((el) => `<li>${el}</li>`)
+              .join('');
+            availabilityHtml += `</ul>`;
+
+            await db.HytteLog.destroy({
+              where: {
+                hytteId: `${availability.id}`,
+                availableDate: dates,
+              },
+            });
+          }
+          if (availabilityStringSet.size !== 0) {
+            const dates = [...availability.availabilities];
+            dates.sort((a, b) => (a.isAfter(b) ? 1 : -1));
+            const dateRanges = dates.reduce((prev, el) => {
+              // has preferred date
+              let hasPreferredDate =
+                preferredStartDDD.length === 0 ||
+                (preferredStartDDD as string[]).includes(el.format('ddd'));
+
+              const latestRange = prev[prev.length - 1];
+              if (
+                latestRange &&
+                el.format('YYYY-MM-DD') ===
+                  latestRange.date.add(latestRange.range, 'day').format('YYYY-MM-DD')
+              ) {
+                prev[prev.length - 1].range += 1;
+                prev[prev.length - 1].hasPreferredDate =
+                  prev[prev.length - 1].hasPreferredDate || hasPreferredDate;
+                return prev;
+              } else {
+                return prev.concat({ date: el, range: 1, hasPreferredDate });
+              }
+            }, [] as { date: dayjs.Dayjs; range: number; hasPreferredDate: boolean }[]);
+
+            const validRanges = dateRanges.filter((el) => el.range >= range && el.hasPreferredDate);
+            if (validRanges.length > 0) {
+              availabilityHtml += `<p>Bookable</p><ul>`;
+              availabilityHtml += validRanges
+                .map(
+                  (range) => `${dayjs(range.date).format('YYYY-MM-DD ddd')} - ${range.range} Day(s)`
+                )
+                .map((el) => `<li>${el}</li>`)
+                .join('');
+              availabilityHtml += `</ul>`;
+            }
+
+            await db.HytteLog.bulkCreate(
+              Array.from(availabilityStringSet).map((date) => ({
+                hytteId: `${availability.id}`,
+                availableDate: date,
+              }))
+            );
+          }
+          if (availabilityHtml.length > 0) {
+            html += `<p>${availability.name}</p>\n${availabilityHtml}`;
+          }
         }
       }
-    }
 
-    if (html.length > 0) {
-      console.log(`emailing for ${cabin.name} - ${cabin.id}`);
+      if (html.length > 0) {
+        console.log(`emailing for ${name} - ${id}`);
+        await sgMail.send({
+          to: email, // Change to your recipient
+          from: 'no-reply@mapper.world', // Change to your verified sender
+          subject: `Hytta Update - ${name}`,
+          html,
+        });
+        console.log(`done emailing for ${name} - ${id}`);
+        // TODO send email
+      }
+    } catch (e) {
       await sgMail.send({
         to: email, // Change to your recipient
         from: 'no-reply@mapper.world', // Change to your verified sender
-        subject: `Hytta Update - ${cabin.name}`,
-        html,
+        subject: `[Failed]Hytta Update - ${name}`,
+        html: `<pre>${JSON.stringify(e, null, 2)}</pre>`,
       });
-      console.log(`done emailing for ${cabin.name} - ${cabin.id}`);
-      // TODO send email
     }
   }
 };
 
-fetchDataForCabins();
+const cabins: Cabin[] = [
+  {
+    name: 'Flokehyttene',
+    id: '6446',
+    startDate: dayjs('2021-05-01'),
+    endDate: dayjs('2021-09-01'),
+    range: 1,
+  },
+  {
+    name: 'Runde',
+    id: '6761',
+    startDate: dayjs('2021-05-01'),
+    endDate: dayjs('2021-09-01'),
+    range: 2,
+  },
+  {
+    name: 'Skapet (Lysefjord)',
+    id: '5528',
+    startDate: dayjs('2021-04-01'),
+    endDate: dayjs('2021-09-01'),
+    preferredStartDDD: ['Fri', 'Sat'],
+    subIds: ['88687', '88689', '88692'],
+  },
+];
+
+fetchDataForCabins(cabins);
