@@ -205,6 +205,7 @@ export const fetchDataForCabins = async (cabins: Cabin[], email = 'david.lky.123
         html: `<pre>${JSON.stringify(e, null, 2)}</pre>`,
       });
     }
+    await new Promise((r) => setTimeout(r, 2000));
   }
 };
 
@@ -213,23 +214,38 @@ const cabins: Cabin[] = [
     name: 'Flokehyttene',
     id: '6446',
     startDate: dayjs('2021-05-01'),
-    endDate: dayjs('2021-09-01'),
+    endDate: dayjs('2021-08-01'),
     range: 1,
   },
   {
     name: 'Runde',
     id: '6761',
     startDate: dayjs('2021-05-01'),
-    endDate: dayjs('2021-09-01'),
+    endDate: dayjs('2021-08-01'),
     range: 2,
   },
   {
     name: 'Skapet (Lysefjord)',
     id: '5528',
     startDate: dayjs('2021-04-01'),
-    endDate: dayjs('2021-09-01'),
+    endDate: dayjs('2021-08-01'),
     preferredStartDDD: ['Fri', 'Sat'],
     subIds: ['88687', '88689', '88692'],
+  },
+  {
+    name: 'Kaldhusetter (Geiranger)',
+    id: '6760',
+    startDate: dayjs('2021-06-01'),
+    endDate: dayjs('2021-08-01'),
+    preferredStartDDD: ['Fri', 'Sat'],
+  },
+  {
+    name: 'Skala (Geiranger)',
+    id: '5493',
+    startDate: dayjs('2021-06-01'),
+    endDate: dayjs('2021-08-01'),
+    subIds: ['104232', '104233', '104234', '104235'],
+    preferredStartDDD: ['Fri', 'Sat'],
   },
 ];
 
