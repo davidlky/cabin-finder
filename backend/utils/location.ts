@@ -214,14 +214,14 @@ const cabins: Cabin[] = [
     name: 'Flokehyttene',
     id: '6446',
     startDate: dayjs('2021-05-01'),
-    endDate: dayjs('2021-08-01'),
+    endDate: dayjs('2021-10-01'),
     range: 1,
   },
   {
     name: 'Runde',
     id: '6761',
     startDate: dayjs('2021-05-01'),
-    endDate: dayjs('2021-08-01'),
+    endDate: dayjs('2021-09-01'),
     range: 2,
   },
   {
@@ -245,6 +245,13 @@ const cabins: Cabin[] = [
     startDate: dayjs('2021-06-01'),
     endDate: dayjs('2021-08-01'),
     subIds: ['104232', '104233', '104234', '104235'],
+    preferredStartDDD: ['Fri', 'Sat'],
+  },
+  {
+    name: 'Oslo Fuglhytte',
+    id: '6516',
+    startDate: dayjs('2021-04-03'),
+    endDate: dayjs('2021-09-04'),
     preferredStartDDD: ['Fri', 'Sat'],
   },
 ];
