@@ -1,6 +1,7 @@
 import axios from 'axios';
 import dayjs from 'dayjs';
 import sgMail from '@sendgrid/mail';
+import twilio from 'twilio';
 import dotenv from 'dotenv';
 import { db } from '../../models';
 dotenv.config();
@@ -24,6 +25,7 @@ type Cabin = {
   range?: number;
   preferredStartDDD?: ('Sun' | 'Mon' | 'Tue' | 'Wed' | 'Thur' | 'Fri' | 'Sat')[];
   subIds?: string[];
+  phone?: string[];
 };
 
 export const getLocationAvailability = async (
@@ -194,16 +196,15 @@ export const fetchDataForCabins = async (cabins: Cabin[], email = 'david.lky.123
           html,
         });
         console.log(`done emailing for ${name} - ${id}`);
-        // TODO send email
       }
     } catch (e) {
       console.log(e);
-      await sgMail.send({
-        to: email, // Change to your recipient
-        from: 'no-reply@mapper.world', // Change to your verified sender
-        subject: `[Failed]Hytta Update - ${name}`,
-        html: `<pre>${JSON.stringify(e, null, 2)}</pre>`,
-      });
+      // await sgMail.send({
+      //   to: email, // Change to your recipient
+      //   from: 'no-reply@mapper.world', // Change to your verified sender
+      //   subject: `[Failed]Hytta Update - ${name}`,
+      //   html: `<pre>${JSON.stringify(e, null, 2)}</pre>`,
+      // });
     }
     await new Promise((r) => setTimeout(r, 2000));
   }
@@ -216,6 +217,7 @@ const cabins: Cabin[] = [
     startDate: dayjs('2021-05-01'),
     endDate: dayjs('2021-10-01'),
     range: 1,
+    phone: ['+16478369673', '+4791398730'],
   },
   {
     name: 'Runde',
@@ -257,3 +259,17 @@ const cabins: Cabin[] = [
 ];
 
 fetchDataForCabins(cabins);
+
+const sendSms = (message: string, number: string) => {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  const client = twilio(accountSid, authToken);
+
+  client.messages
+    .create({
+      body: message,
+      from: '+17047654772',
+      to: number,
+    })
+    .then((message) => console.log(message.sid));
+};
